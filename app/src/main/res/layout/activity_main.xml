@@ -20,8 +20,8 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="minuteAlarm"
-        android:text="Set in 60 seconds" />
+        android:onClick="hMinuteAlarm"
+        android:text="Set in 30 seconds" />
 
     <Space
         android:layout_width="match_parent"
