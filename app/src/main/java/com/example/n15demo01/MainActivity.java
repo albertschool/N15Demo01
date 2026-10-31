@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // TODO: check live permissions
-
     }
 
     /**
