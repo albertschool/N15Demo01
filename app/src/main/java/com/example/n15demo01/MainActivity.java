@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.View;
@@ -40,8 +41,15 @@ public class MainActivity extends AppCompatActivity {
         tV = findViewById(R.id.tV);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // TODO: check live permissions
+
+    }
+
     /**
-     * hMinuteAlarm method
+     * Set to a difference (30 seconds) if time from now Alarm method
      * <p> Demonstrate elapsed realtime alarm after 30 seconds
      * </p>
      *
@@ -62,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * todAlarm method
+     * Set to a desired Time Of Day Alarm method
      * <p> Demonstrate time of day alarm selected by user
      * </p>
      *
@@ -133,10 +141,23 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr.set(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(), alarmIntent);
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
+        saveAlarmParameters(ALARM_RQST_CODE, calSet.getTimeInMillis());
+    }
+
+    private void saveAlarmParameters(int requestCode, long timeInMillis) {
+        SharedPreferences alarmsPrefs = getSharedPreferences("AlarmsPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = alarmsPrefs.edit();
+
+        // שמירת זמן ההתראה תחת מפתח ייחודי המשלב את קוד הבקשה
+        editor.putLong("alarm_time_" + requestCode, timeInMillis);
+        // שמירת קוד הבקשה העדכני למניעת התנגשויות מזהים בעתיד
+        editor.putInt("last_request_code", requestCode);
+
+        editor.apply();
     }
 
     /**
-     * dailyAlarm method
+     * Set a Daily reminder Alarm method
      * <p> Demonstrate inexact repeating daily rtc (4:00 PM) alarm
      * </p>
      *
@@ -165,11 +186,12 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY, alarmIntent);
+        // TODO: save TOD
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
     }
 
     /**
-     * clockAlarm method
+     * Set an alarm clock "with snooze" Alarm method
      * <p> Demonstrate rtc alarm clock (7:00 AM) repeating every 5 minutes
      * </p>
      *
@@ -198,11 +220,12 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr.setRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 1000 * 60 * 5, alarmIntent);
+        // TODO: save care of repeating
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
     }
 
     /**
-     * cancelAlarm method
+     * cancel Alarm method
      * <p> Demonstrate canceling the last alarm that was set
      * </p>
      *
