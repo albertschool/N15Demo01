@@ -4,11 +4,11 @@ plugins {
 
 android {
     namespace 'com.example.n15demo01'
-    compileSdk 33
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.n15demo01"
-        minSdk 23
+        minSdk 24
         targetSdk 33
         versionCode 1
         versionName "1.0"

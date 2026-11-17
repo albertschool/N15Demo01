@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 import android.view.WindowManager;
+import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -15,10 +16,12 @@ import android.widget.Toast;
  */
 
 public class AlarmReceiver extends BroadcastReceiver {
+    private String TAG = "AlarmReceiver";
 
     @Override
     public void onReceive(Context context, Intent ri) {
         String msg = ri.getStringExtra("msg");
+        Log.i(TAG, "onReceive: Alarm activated with message: " + msg);
         Toast.makeText(context, msg+" Alarm has been activated !", Toast.LENGTH_LONG).show();
     }
 }
