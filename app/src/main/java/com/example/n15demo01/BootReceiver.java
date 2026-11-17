@@ -57,20 +57,16 @@ public class BootReceiver extends BroadcastReceiver {
                 } else if (key.startsWith("repeat_alarm_time_")) {
                     long alarmTime = (Long) entry.getValue();
                     int requestCode = Integer.parseInt(key.replace("repeat_alarm_time_", ""));
-// TODO: take care of repeating
-                    if (alarmTime > currentTime) {
-                        // שחזור ההתראה
-                        Intent alarmIntent = new Intent(context, AlarmReceiver.class);
-                        alarmIntent.putExtra("msg", String.valueOf(requestCode) + " TOD");
 
-                        PendingIntent pendingIntent = PendingIntent.getBroadcast(context,
-                                requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+                    // Restoring repeating alarm
+                    Intent alarmIntent = new Intent(context, AlarmReceiver.class);
+                    alarmIntent.putExtra("msg", String.valueOf(requestCode) + " Repeat");
 
-                        alarmMgr.set(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent);
-                    } else {
-                        // Time has passed
-                        clearStaleAlarm(context, alarmsPrefs, requestCode);
-                    }
+                    PendingIntent pendingIntent = PendingIntent.getBroadcast(context,
+                            requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+
+                    alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime,
+                            AlarmManager.INTERVAL_DAY, pendingIntent);
                 }
             }
         }
@@ -87,6 +83,7 @@ public class BootReceiver extends BroadcastReceiver {
     private void clearStaleAlarm(Context context, SharedPreferences prefs, int requestCode) {
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove("alarm_time_" + requestCode);
+        editor.remove("repeat_alarm_time_" + requestCode);
         editor.apply();
 
         Toast.makeText(context, "An expired notification was deleted after a restart.", Toast.LENGTH_SHORT).show();

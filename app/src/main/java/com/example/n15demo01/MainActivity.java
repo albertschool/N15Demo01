@@ -1,13 +1,17 @@
 package com.example.n15demo01;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.View;
@@ -28,6 +32,7 @@ import java.util.Date;
  * The application also show how to cancel a desired alarm
  */
 public class MainActivity extends AppCompatActivity {
+    private String TAG = "MainActivity";
     private TextView tV;
     private AlarmManager alarmMgr;
     private PendingIntent alarmIntent;
@@ -39,12 +44,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tV = findViewById(R.id.tV);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // TODO: check live permissions
     }
 
     /**
@@ -139,20 +138,8 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
         alarmMgr.set(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(), alarmIntent);
+        saveAlarmParameters(ALARM_RQST_CODE, calSet.getTimeInMillis(), false, false);
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
-        saveAlarmParameters(ALARM_RQST_CODE, calSet.getTimeInMillis());
-    }
-
-    private void saveAlarmParameters(int requestCode, long timeInMillis) {
-        SharedPreferences alarmsPrefs = getSharedPreferences("AlarmsPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = alarmsPrefs.edit();
-
-        // שמירת זמן ההתראה תחת מפתח ייחודי המשלב את קוד הבקשה
-        editor.putLong("alarm_time_" + requestCode, timeInMillis);
-        // שמירת קוד הבקשה העדכני למניעת התנגשויות מזהים בעתיד
-        editor.putInt("last_request_code", requestCode);
-
-        editor.apply();
     }
 
     /**
@@ -185,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY, alarmIntent);
-        // TODO: save TOD
+        saveAlarmParameters(ALARM_RQST_CODE, calSet.getTimeInMillis(), true, false);
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
     }
 
@@ -219,8 +206,29 @@ public class MainActivity extends AppCompatActivity {
         alarmMgr.setRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 1000 * 60 * 5, alarmIntent);
-        // TODO: save care of repeating
+        saveAlarmParameters(ALARM_RQST_CODE, calSet.getTimeInMillis(), true, true);
         tV.setText(String.valueOf(ALARM_RQST_CODE)+" Alarm in "+String.valueOf(calSet.getTime()));
+    }
+
+
+    private void saveAlarmParameters(int requestCode, long timeInMillis, boolean repeat, boolean snooze) {
+        SharedPreferences alarmsPrefs = getSharedPreferences("AlarmsPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = alarmsPrefs.edit();
+
+        // שמירת זמן ההתראה תחת מפתח ייחודי המשלב את קוד הבקשה
+        if (repeat) {
+            if (snooze) {
+                editor.putLong("repeat_alarm_time_snooze_" + requestCode, timeInMillis);
+            } else {
+                editor.putLong("repeat_alarm_time_" + requestCode, timeInMillis);
+            }
+        } else {
+            editor.putLong("alarm_time_" + requestCode, timeInMillis);
+        }
+        // שמירת קוד הבקשה העדכני למניעת התנגשויות מזהים בעתיד
+        editor.putInt("last_request_code", requestCode);
+
+        editor.apply();
     }
 
     /**
