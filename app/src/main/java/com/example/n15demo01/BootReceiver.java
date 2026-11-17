@@ -8,9 +8,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.widget.Toast;
 
+import java.util.Calendar;
 import java.util.Map;
 
 public class BootReceiver extends BroadcastReceiver {
+
+    private SharedPreferences alarmsPrefs;
+    private AlarmManager alarmMgr;
+    private long currentTime, alarmTime;
+    private int requestCode;
+    private Intent alarmIntent;
+    private PendingIntent pendingIntent;
 
     /**
      * Receives broadcast intents, specifically checking for {@link Intent#ACTION_BOOT_COMPLETED}.
@@ -27,46 +35,59 @@ public class BootReceiver extends BroadcastReceiver {
         if (action.equals(Intent.ACTION_BOOT_COMPLETED) ||
                 action.equals("android.intent.action.QUICKBOOT_POWERON")) {
             // Recover the alarms
-            SharedPreferences alarmsPrefs = context.getSharedPreferences("AlarmsPrefs", Context.MODE_PRIVATE);
+            alarmsPrefs = context.getSharedPreferences("AlarmsPrefs", Context.MODE_PRIVATE);
             Map<String, ?> allEntries = alarmsPrefs.getAll();
-            AlarmManager alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            long currentTime = System.currentTimeMillis();
+            alarmMgr = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
             for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
                 String key = entry.getKey();
+                alarmTime = (Long) entry.getValue();
+                currentTime = System.currentTimeMillis();
+
+                // Checking if time has passed
+                if (currentTime > alarmTime) {
+                    if (key.startsWith("repeat_alarm_time_")) {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTimeInMillis(currentTime);
+                        // Add 1 day to the calendar, preserving the same hour, minute, and second
+                        calendar.add(Calendar.DAY_OF_YEAR, 1);
+                        alarmTime = calendar.getTimeInMillis();
+                    } else {
+                        // clear the alarm for TOD or snooze alarm
+                        clearStaleAlarm(context, alarmsPrefs, requestCode);
+                        continue;
+                    }
+                }
 
                 // Filtering the keys that belong only to once alarms
                 if (key.startsWith("alarm_time_")) {
-                    long alarmTime = (Long) entry.getValue();
-                    int requestCode = Integer.parseInt(key.replace("alarm_time_", ""));
-                    // Check if the alert time has already passed while the device was off
-                    if (alarmTime > currentTime) {
-                        // Redefining the Alarm
-                        Intent alarmIntent = new Intent(context, AlarmReceiver.class);
-                        alarmIntent.putExtra("msg", String.valueOf(requestCode) + " TOD");
-
-                        PendingIntent pendingIntent = PendingIntent.getBroadcast(context,
-                                requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
-
-                        alarmMgr.set(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent);
-                    } else {
-                        // Time has passed
-                        clearStaleAlarm(context, alarmsPrefs, requestCode);
-                    }
-                    // Filtering the keys that belong to the repeat alarms
+                    requestCode = Integer.parseInt(key.replace("alarm_time_", ""));
+                    // Redefining the Alarm
+                    alarmIntent = new Intent(context, AlarmReceiver.class);
+                    alarmIntent.putExtra("msg", String.valueOf(requestCode) + " TOD");
+                    pendingIntent = PendingIntent.getBroadcast(context, requestCode,
+                            alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+                    alarmMgr.set(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent);
+                // Filtering the keys that belong to the repeat alarms
                 } else if (key.startsWith("repeat_alarm_time_")) {
-                    long alarmTime = (Long) entry.getValue();
-                    int requestCode = Integer.parseInt(key.replace("repeat_alarm_time_", ""));
-
+                    requestCode = Integer.parseInt(key.replace("repeat_alarm_time_", ""));
                     // Restoring repeating alarm
-                    Intent alarmIntent = new Intent(context, AlarmReceiver.class);
-                    alarmIntent.putExtra("msg", String.valueOf(requestCode) + " Repeat");
-
-                    PendingIntent pendingIntent = PendingIntent.getBroadcast(context,
-                            requestCode, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
-
+                    alarmIntent = new Intent(context, AlarmReceiver.class);
+                    alarmIntent.putExtra("msg",String.valueOf(requestCode)+" Daily");
+                    pendingIntent = PendingIntent.getBroadcast(context, requestCode,
+                            alarmIntent, PendingIntent.FLAG_IMMUTABLE);
                     alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP, alarmTime,
                             AlarmManager.INTERVAL_DAY, pendingIntent);
+                // Filtering the keys that belong only to snooze alarms
+                } else {
+                    requestCode = Integer.parseInt(key.replace("snooze_repeat_alarm_time_", ""));
+                    // Restoring snooze alarm
+                    alarmIntent = new Intent(context, AlarmReceiver.class);
+                    alarmIntent.putExtra("msg",String.valueOf(requestCode)+" Clock");
+                    pendingIntent = PendingIntent.getBroadcast(context, requestCode,
+                            alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+                    alarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, alarmTime,
+                            1000 * 60 * 5, pendingIntent);
                 }
             }
         }
@@ -84,6 +105,7 @@ public class BootReceiver extends BroadcastReceiver {
         SharedPreferences.Editor editor = prefs.edit();
         editor.remove("alarm_time_" + requestCode);
         editor.remove("repeat_alarm_time_" + requestCode);
+        editor.remove("snooze_repeat_alarm_time_" + requestCode);
         editor.apply();
 
         Toast.makeText(context, "An expired notification was deleted after a restart.", Toast.LENGTH_SHORT).show();

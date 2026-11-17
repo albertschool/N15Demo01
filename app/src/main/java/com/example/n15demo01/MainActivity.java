@@ -156,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
         alarmIntent = PendingIntent.getBroadcast(this,
                 ALARM_RQST_CODE, intent, PendingIntent.FLAG_IMMUTABLE);
         alarmMgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-// Set the alarm to start at approximately 4:00 PM
+        // Set the alarm to start at approximately 2:00 PM
         Calendar calNow = Calendar.getInstance();
         Calendar calSet = (Calendar) calNow.clone();
 
@@ -168,7 +168,7 @@ public class MainActivity extends AppCompatActivity {
         if (calSet.compareTo(calNow) <= 0) {
             calSet.add(Calendar.DATE, 1);
         }
-// Set inexact repeating & interval to AlarmManager.INTERVAL_DAY
+        // Set inexact repeating & interval to AlarmManager.INTERVAL_DAY
         alarmMgr.setInexactRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 AlarmManager.INTERVAL_DAY, alarmIntent);
@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
         alarmIntent = PendingIntent.getBroadcast(this,
                 ALARM_RQST_CODE, intent, PendingIntent.FLAG_IMMUTABLE);
         alarmMgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
-// Set the alarm to start at 07:00 AM
+        // Set the alarm to start at 07:00 AM
         Calendar calNow = Calendar.getInstance();
         Calendar calSet = (Calendar) calNow.clone();
 
@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
         if (calSet.compareTo(calNow) <= 0) {
             calSet.add(Calendar.DATE, 1);
         }
-// Set the repeating interval to 5 minutes
+        // Set the repeating interval to 5 minutes
         alarmMgr.setRepeating(AlarmManager.RTC_WAKEUP,
                 calSet.getTimeInMillis(),
                 1000 * 60 * 5, alarmIntent);
@@ -214,20 +214,18 @@ public class MainActivity extends AppCompatActivity {
     private void saveAlarmParameters(int requestCode, long timeInMillis, boolean repeat, boolean snooze) {
         SharedPreferences alarmsPrefs = getSharedPreferences("AlarmsPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = alarmsPrefs.edit();
-
-        // שמירת זמן ההתראה תחת מפתח ייחודי המשלב את קוד הבקשה
+        // Storing the alarm under a unique key that incorporates the request code
         if (repeat) {
             if (snooze) {
-                editor.putLong("repeat_alarm_time_snooze_" + requestCode, timeInMillis);
+                editor.putLong("snooze_repeat_alarm_time_" + requestCode, timeInMillis);
             } else {
                 editor.putLong("repeat_alarm_time_" + requestCode, timeInMillis);
             }
         } else {
             editor.putLong("alarm_time_" + requestCode, timeInMillis);
         }
-        // שמירת קוד הבקשה העדכני למניעת התנגשויות מזהים בעתיד
+        // Storing the latest request code to prevent future identifier collisions
         editor.putInt("last_request_code", requestCode);
-
         editor.apply();
     }
 
