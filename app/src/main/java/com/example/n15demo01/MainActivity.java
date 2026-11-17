@@ -1,17 +1,13 @@
 package com.example.n15demo01;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
@@ -19,7 +15,6 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import java.util.Calendar;
-import java.util.Date;
 
 /**
  * @author		Levy Albert albert.school2015@gmail.com

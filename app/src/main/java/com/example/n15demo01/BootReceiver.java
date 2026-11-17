@@ -57,7 +57,6 @@ public class BootReceiver extends BroadcastReceiver {
                 } else {
                     alarmTime = (Long) obj;
                 }
-//                alarmTime = (Long) entry.getValue();
                 currentTime = System.currentTimeMillis();
 
                 // Checking if time has passed
